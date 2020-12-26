@@ -6,7 +6,7 @@ public class Pathfinder : MonoBehaviour
 {
     [SerializeField] Waypoint startWayPoint, endWayPoint;
     Dictionary<Vector2Int, Waypoint> grid = new Dictionary<Vector2Int, Waypoint>();
-    Vector2Int[] directions = {
+    readonly Vector2Int[] directions = {
         Vector2Int.up,
         Vector2Int.right,
         Vector2Int.left,
@@ -14,15 +14,32 @@ public class Pathfinder : MonoBehaviour
     };
     Queue<Waypoint> queue = new Queue<Waypoint>();
     Dictionary<Vector2Int, Waypoint> exploredNodes = new Dictionary<Vector2Int, Waypoint>();
+    Stack<Waypoint> path = new Stack<Waypoint>();
     bool isRunning;
     Waypoint currentSearchCenter;
 
-    // Start is called before the first frame update
-    void Start()
-    {
+    public Stack<Waypoint> GetPath() {
         LoadBlocks();
         ColorStartAndEnd();
         Pathfind();
+        CreatePath();
+        return path;
+    }
+
+    private void CreatePath() {
+        path.Push(endWayPoint);
+        Waypoint previous = endWayPoint.previousWaypoint;
+
+        while(previous != startWayPoint) {
+            path.Push(previous);
+            previous = previous.previousWaypoint;
+        }
+
+        path.Push(startWayPoint);
+    }
+
+    private void ClearPath() {
+        path.Clear();
     }
 
     private void Pathfind()
@@ -36,7 +53,7 @@ public class Pathfinder : MonoBehaviour
 
             while(queue.Count > 0 && isRunning) {
                 currentSearchCenter = queue.Dequeue();
-                if (isEndpoint()) {
+                if (IsEndpoint()) {
                     StopPathFinder();
                 } else {
                     ExploreNeighbours(currentSearchCenter);
@@ -45,7 +62,7 @@ public class Pathfinder : MonoBehaviour
         }
     }
 
-    private bool isEndpoint() {
+    private bool IsEndpoint() {
         return currentSearchCenter == endWayPoint;
     }
 
@@ -73,8 +90,8 @@ public class Pathfinder : MonoBehaviour
 
             bool isNodeExplored = exploredNodes.ContainsKey(neighbourCoordinates);
             if (!isNodeExplored && !queue.Contains(neighbour)) {
-                queue.Enqueue(neighbour);
                 neighbour.previousWaypoint = currentSearchCenter;
+                queue.Enqueue(neighbour);
             }
         }
     }
